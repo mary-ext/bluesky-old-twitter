@@ -1,0 +1,24 @@
+@font-face {
+	src: url(../assets/fonts/edge-icons.woff2);
+	font-family: EdgeIcons;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: content-box;
+}
+
+body {
+	background-color: #e6ecf0;
+	overflow-y: scroll;
+	font-size: 0.875rem;
+	line-height: 1.375;
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif, 'Twemoji Mozilla', 'Twemoji',
+		'Noto Color Emoji';
+}
+
+body:has(dialog[data-modal][open]) {
+	padding-right: var(--sb-width, 0);
+	overflow: hidden;
+}
