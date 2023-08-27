@@ -54,18 +54,18 @@ const { data: profile } = useQuery({
 
 <style scoped>
 .header {
-	height: 46px;
 	border-bottom: 1px solid rgba(0, 0, 0, 0.15);
 	background-color: #fff;
+	height: 46px;
 	color: #66757f;
 }
 
 .header__inner {
 	display: flex;
 	align-items: center;
+	margin: 0 auto;
 	max-width: 890px;
 	height: 100%;
-	margin: 0 auto;
 }
 
 @media screen and (min-width: 1236px) {
@@ -88,8 +88,8 @@ const { data: profile } = useQuery({
 }
 
 .avatar {
+	border-radius: 9999px;
 	width: 32px;
 	height: 32px;
-	border-radius: 9999px;
 }
 </style>

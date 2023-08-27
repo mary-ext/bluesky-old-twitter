@@ -20,9 +20,9 @@ const props = withDefaults(defineProps<Props>(), {
 .button {
 	border-radius: 9999px;
 	padding: 6px 16px;
+	font-weight: 700;
 	font-size: 0.875rem;
 	line-height: 1.25rem;
-	font-weight: 700;
 }
 .button:focus {
 	outline: 2px solid #a3d4f2;
@@ -33,8 +33,8 @@ const props = withDefaults(defineProps<Props>(), {
 	outline-offset: 2px;
 }
 .button:disabled {
-	cursor: not-allowed;
 	opacity: 0.3;
+	cursor: not-allowed;
 }
 
 /** Size */

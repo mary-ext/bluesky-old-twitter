@@ -4,7 +4,6 @@ import { peek } from '~/utils/refs.ts';
 
 import { type SignalizedTimelinePost, createSignalizedTimelinePost } from '../cache/posts.ts';
 
-
 type FeedPost = RefOf<'app.bsky.feed.defs#feedViewPost'>;
 
 export interface TimelineSlice {

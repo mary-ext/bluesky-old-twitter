@@ -5,12 +5,12 @@
 <style scoped>
 .input {
 	box-sizing: border-box;
-	width: 221px;
-	height: 32px;
-	padding: 8px 32px 8px 12px;
 	border: 1px solid #e6ecf0;
 	border-radius: 9999px;
 	background-color: #f5f8fa;
+	padding: 8px 32px 8px 12px;
+	width: 221px;
+	height: 32px;
 	color: #14171a;
 	font-size: 12px;
 	line-height: 16px;
@@ -22,7 +22,7 @@
 }
 
 .input::placeholder {
-	color: #657786;
 	opacity: 1;
+	color: #657786;
 }
 </style>

@@ -180,9 +180,9 @@ const props = defineProps<{
 .icon {
 	display: inline-block;
 	position: relative;
+	vertical-align: baseline;
 	background: transparent;
 	font-style: normal;
-	vertical-align: baseline;
 }
 
 .icon::before {

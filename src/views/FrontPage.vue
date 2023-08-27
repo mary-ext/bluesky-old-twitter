@@ -122,34 +122,34 @@ const handleSubmit = (ev: Event) => {
 	flex-direction: column;
 	align-items: center;
 	align-items: center;
-	min-height: 100vh;
-	padding-top: 116px;
 	gap: 119px;
 	background-color: #000;
+	padding-top: 116px;
+	min-height: 100vh;
 }
 
 /* Background */
 .background {
-	z-index: 0;
 	position: fixed;
+	z-index: 0;
 	inset: 0;
 }
 
 .background img {
+	opacity: 0.28;
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
-	opacity: 0.28;
 }
 
 /* Card */
 .front {
 	display: flex;
-	z-index: 1;
 	justify-content: space-between;
+	gap: 18px;
+	z-index: 1;
 	width: 838px;
 	height: 410px;
-	gap: 18px;
 }
 
 .front__main {
@@ -194,10 +194,10 @@ const handleSubmit = (ev: Event) => {
 
 /* Login card */
 .login-card {
-	padding: 12px;
 	border: 1px solid rgb(0 0 0 / 0.1);
 	border-radius: 4px;
 	background-color: #fff;
+	padding: 12px;
 	font-size: 14px;
 }
 
@@ -221,14 +221,14 @@ const handleSubmit = (ev: Event) => {
 
 .login-card__actions {
 	display: flex;
-	align-items: center;
 	justify-content: space-between;
+	align-items: center;
 }
 
 .login-card__footer {
 	margin: 12px -12px -12px;
-	padding: 12px;
 	background-color: #f5f8fa;
+	padding: 12px;
 	color: #657786;
 }
 
