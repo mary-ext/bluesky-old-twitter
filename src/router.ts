@@ -60,7 +60,7 @@ export const router = createRouter({
 							const uid = to.params.uid as DID;
 							const actor = to.params.actor as string;
 
-							return { path: `/u/${uid}/profile/${actor}` };
+							return `/u/${uid}/profile/${actor}`;
 						},
 					},
 				},
@@ -75,49 +75,43 @@ export const router = createRouter({
 });
 
 // Modal route handling
-export const backgroundId = Date.now().toString(36);
-export const historyState = shallowRef(history.state as HistoryState);
+let first = true;
 
-router.afterEach(() => {
-	historyState.value = history.state || {};
-});
-
-router.beforeResolve(async (to) => {
-	const state = historyState.value;
+router.beforeResolve(async (to, from) => {
 	const meta = to.meta;
 
-	// NOTE: this code should be matched with the one in `src/App.vue`
+	if (meta.defaultBackgroundRoute) {
+		if (first) {
+			const bg = meta.defaultBackgroundRoute(to);
+			const resolved = router.resolve(bg);
 
-	// TODO: there's currently an issue where going back and forth after reloading
-	// in a modal route results in the background view getting changed, it should
-	// reuse the view instead.
+			await loadRouteLocation(resolved);
 
-	if (state && state.bg_id === backgroundId) {
-		const resolved = router.resolve(state.bg_route!);
-
-		await loadRouteLocation(resolved);
-	} else if (meta && meta.defaultBackgroundRoute) {
-		const bg = meta.defaultBackgroundRoute(to);
-		const resolved = router.resolve(bg);
-
-		await loadRouteLocation(resolved);
+			meta._bgRoute = resolved;
+		} else if (from.meta._bgRoute) {
+			meta._bgRoute = from.meta._bgRoute;
+		} else {
+			meta._bgRoute = from;
+		}
 	}
+
+	first = false;
 });
 
 declare module 'vue-router' {
-	interface HistoryState {
-		/** Ensures  we're only using `bg_route` if it matches with our random ID */
-		bg_id?: string;
-		/** Route path to use as background view for modal routes */
-		bg_route?: RouteLocationRaw;
-	}
-
 	interface RouteMeta {
 		/**
-		 * Indicates that this route is a modal-only route, it will try to use the
-		 * previous route as the background view, but if it can't, it will call this
-		 * function to get the "default" background view
+		 * Indicates that this route is a modal route, it will try to use the route
+		 * it was transitioning from as the background view, but if it can't, it
+		 * will call this function to get the "default" background view for use
 		 */
 		defaultBackgroundRoute?: (to: RouteLocationNormalized) => RouteLocationRaw;
+
+		/**
+		 * @internal
+		 * This is an internal property for our navigation guards to attach the
+		 * appropriate background view to use for a modal route.
+		 */
+		_bgRoute?: RouteLocation;
 	}
 }

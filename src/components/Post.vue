@@ -7,7 +7,6 @@ import type { DID } from '@intrnl/bluesky-client/atp-schema';
 import type { SignalizedPost, SignalizedTimelinePost } from '~/api/cache/posts.ts';
 import { getRecordId } from '~/api/utils.ts';
 
-import { backgroundId } from '~/router.ts';
 import { isElementAltClicked, isElementClicked } from '~/utils/misc.ts';
 import * as reltime from '~/utils/intl/reltime.ts';
 
@@ -40,8 +39,7 @@ const handleClick = (ev: MouseEvent | KeyboardEvent) => {
 	if (isElementAltClicked(ev)) {
 		open(path, '_blank');
 	} else {
-		const current = router.currentRoute.value;
-		router.push({ path, state: { bg_id: backgroundId, bg_route: current.path } });
+		router.push(path);
 	}
 };
 </script>

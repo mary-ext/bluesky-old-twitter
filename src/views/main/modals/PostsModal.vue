@@ -50,7 +50,7 @@ const handleClose = () => {
 		</template>
 		<template v-else-if="thread">
 			<div class="pl-modal">
-				<PlPost :post="thread.post" />
+				<PlPost :uid="uid" :post="thread.post" />
 			</div>
 		</template>
 		<template v-else>

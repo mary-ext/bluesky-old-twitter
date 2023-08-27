@@ -2,6 +2,9 @@
 
 <script setup lang="ts">
 import { toRef } from 'vue';
+import { RouterLink } from 'vue-router';
+
+import type { DID } from '@intrnl/bluesky-client/atp-schema';
 
 import type { SignalizedPost } from '~/api/cache/posts.ts';
 
@@ -13,6 +16,7 @@ import Icon from '~/components/Icon.vue';
 import DefaultAvatar from '~/assets/default-avatar.png';
 
 const props = defineProps<{
+	uid: DID;
 	post: SignalizedPost;
 }>();
 
@@ -24,7 +28,9 @@ const record = toRef(() => post.value.record.value);
 <template>
 	<div class="plpost">
 		<div class="plpost-header">
-			<img :src="author.avatar.value || DefaultAvatar" class="plpost-header__avatar" />
+			<RouterLink :to="`/u/${uid}/profile/${author.did}`">
+				<img :src="author.avatar.value || DefaultAvatar" class="plpost-header__avatar" />
+			</RouterLink>
 
 			<a class="plpost-author">
 				<span dir="auto" class="plpost-author__name">{{ author.displayName.value }}</span>
