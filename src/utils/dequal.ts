@@ -19,7 +19,7 @@ export const dequal = (a: any, b: any): boolean => {
 			}
 
 			return len === -1;
-		} else if (!ctor || ctor === Object) {
+		} else if (ctor === Object || ctor === undefined) {
 			len = 0;
 
 			for (ctor in a) {
