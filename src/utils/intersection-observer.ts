@@ -32,4 +32,4 @@ const callback: IntersectionObserverCallback = (entries, observer) => {
 	}
 };
 
-export const scrollObserver = new IntersectionObserver(callback, { rootMargin: '106.25% 0px' });
+export const scrollObserver = new IntersectionObserver(callback, { rootMargin: '95% 0px' });
