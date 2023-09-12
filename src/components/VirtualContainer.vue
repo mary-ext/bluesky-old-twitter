@@ -41,7 +41,7 @@ const handleIntersect = (next: IntersectionObserverEntry) => {
 	intersecting.value = intersect;
 };
 
-const measure = (node: Element) => {
+const measure = (node: any) => {
 	return scrollObserver.observe(node);
 };
 
@@ -56,7 +56,7 @@ const shouldHide = () => {
 
 <template>
 	<article
-		ref="measure"
+		:ref="measure"
 		:style="{ height: shouldHide() ? `${height || cachedHeight()}px` : undefined }"
 		.$onintersect="handleIntersect"
 	>
