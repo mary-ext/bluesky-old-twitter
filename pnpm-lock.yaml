@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@intrnl/bluesky-client':
-    specifier: ^0.1.7
-    version: 0.1.8
+    specifier: ^0.2.1
+    version: 0.2.1
   '@tanstack/vue-query':
     specifier: ^4.34.0
     version: 4.35.2(vue@3.3.4)
@@ -270,8 +270,8 @@ packages:
     dev: true
     optional: true
 
-  /@intrnl/bluesky-client@0.1.8:
-    resolution: {integrity: sha512-nbKjG9v5sRp8mbr37Wj18fhwF+L63PFWrWU4YcjUbZ4zOhNRuRtldizRnHAKwOzUrss1l9atLM2gk8ayw8zMLg==}
+  /@intrnl/bluesky-client@0.2.1:
+    resolution: {integrity: sha512-sqeklXcbsQgML46qO0n28baC3up4FoKoqozF9u3dpGqh1Fbg64vlUvnfyPmyU1NPy0/4cC0gVJLaqGOFZ54vbw==}
     dev: false
 
   /@jridgewell/gen-mapping@0.3.3:

@@ -9,7 +9,7 @@
 		"fmt": "prettier --cache --write ."
 	},
 	"dependencies": {
-		"@intrnl/bluesky-client": "^0.1.7",
+		"@intrnl/bluesky-client": "^0.2.1",
 		"@tanstack/vue-query": "^4.34.0",
 		"@vue/reactivity": "^3.3.4",
 		"vue": "^3.3.4",
