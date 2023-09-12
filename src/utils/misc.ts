@@ -4,6 +4,17 @@ export function assert(condition: any, message = 'Assertion failed'): asserts co
 	}
 }
 
+export type VoidFunction = (...args: any[]) => void;
+
+export const debounce = <F extends VoidFunction>(fn: F, delay: number) => {
+	let timeout: any;
+
+	return (...args: Parameters<F>) => {
+		clearTimeout(timeout);
+		timeout = setTimeout(() => fn(...args), delay);
+	};
+};
+
 export const INTERACTIVE_MEDIA_TAGS = ['a', 'button', 'img', 'video', 'dialog'];
 export const INTERACTION_TAGS = ['a', 'button'];
 
