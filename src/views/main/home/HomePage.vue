@@ -7,9 +7,10 @@ import { useInfiniteQuery } from '@tanstack/vue-query';
 
 import { type FeedPageParam, getTimelineKey, getTimeline } from '~/api/queries/get-timeline.ts';
 
-import Post from '~/components/Post.vue';
+import Post, { createPostKey } from '~/components/Post.vue';
 import PaneContainer from '~/components/PaneContainer.vue';
 import SelfProfileCard from '~/components/main/home/SelfProfileCard.vue';
+import VirtualContainer from '~/components/VirtualContainer.vue';
 
 const route = useRoute();
 const uid = toRef(() => route.params.uid as DID);
@@ -44,16 +45,30 @@ const flattenedSlices = computed(() => {
 			<div class="timeline-container">
 				<div class="compose-container"></div>
 				<div>
-					<template v-for="slice of flattenedSlices">
-						<template v-for="(item, idx) of slice.items" :key="item.post.cid.value">
-							<Post
-								:uid="uid"
-								:post="item.post"
-								:parent="item.reply?.parent"
-								:reason="item.reason"
-								:prev="idx !== 0"
-								:next="idx !== slice.items.length - 1"
-							/>
+					<template
+						v-for="slice of flattenedSlices"
+						v-memo="[slice.items.length, slice.items[0].post.cid.value]"
+					>
+						<template v-for="(item, idx) of slice.items">
+							<VirtualContainer
+								:id="
+									createPostKey(
+										item.post.cid.value,
+										(!!item.reply?.parent && idx === 0) || !!item.reason,
+										idx !== slice.items.length - 1,
+									)
+								"
+								:estimate-height="88.05"
+							>
+								<Post
+									:uid="uid"
+									:post="item.post"
+									:parent="item.reply?.parent"
+									:reason="item.reason"
+									:prev="idx !== 0"
+									:next="idx !== slice.items.length - 1"
+								/>
+							</VirtualContainer>
 						</template>
 					</template>
 				</div>

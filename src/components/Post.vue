@@ -1,3 +1,9 @@
+<script lang="ts">
+export const createPostKey = (cid: string, parent: boolean, next: boolean) => {
+	return `posts/${cid}:${+parent}${+next}`;
+};
+</script>
+
 <script setup lang="ts">
 import { toRef } from 'vue';
 import { useRouter } from 'vue-router';
