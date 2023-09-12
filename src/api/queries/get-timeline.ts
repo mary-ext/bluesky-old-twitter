@@ -472,9 +472,15 @@ const createHomeSliceFilter = (uid: DID): SliceFilter | undefined => {
 			const root = first.reply.root;
 			const parent = first.reply.parent;
 
+			const rAuthor = root.author;
+			const pAuthor = parent.author;
+
+			const rViewer = rAuthor.viewer;
+			const pViewer = pAuthor.viewer;
+
 			if (
-				(root.author.did !== uid && !peek(root.author.viewer.following)) ||
-				(parent.author.did !== uid && !peek(parent.author.viewer.following))
+				(rAuthor.did !== uid && (!peek(rViewer.following) || peek(rViewer.muted))) ||
+				(pAuthor.did !== uid && (!peek(pViewer.following) || peek(pViewer.muted)))
 			) {
 				return false;
 			}
