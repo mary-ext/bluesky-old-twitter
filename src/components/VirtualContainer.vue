@@ -42,7 +42,7 @@ const handleIntersect = (next: IntersectionObserverEntry) => {
 };
 
 const measure = (node: any) => {
-	return scrollObserver.observe(node);
+	return node && scrollObserver.observe(node);
 };
 
 const cachedHeight = () => {
