@@ -66,12 +66,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 /** Primary variant */
 .variant--primary {
-	background-color: rgb(29 161 242);
-	color: rgb(255 255 255);
+	background-color: #1da1f2;
+	color: #ffffff;
 }
 .variant--primary:hover,
 .variant--primary:active {
-	background-color: rgb(0 109 191);
+	background-color: #006dbf;
 }
 
 /** Secondary variant */
