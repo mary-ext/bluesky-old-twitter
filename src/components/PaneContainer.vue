@@ -24,9 +24,9 @@ const isWidescreen = useMediaQuery('screen and (min-width: 1236px)');
 .pane {
 	display: grid;
 	grid-template-columns: minmax(0, 290px) minmax(0, 2fr);
-	gap: 12px;
+	gap: 10px;
 	margin: 0 auto;
-	padding: 12px 6px;
+	padding: 10px 5px;
 	max-width: 890px;
 }
 
