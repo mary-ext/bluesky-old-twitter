@@ -68,7 +68,7 @@ const { data: profile } = useQuery({
 	height: 100%;
 }
 
-@media screen and (min-width: 1236px) {
+@media (min-width: 1236px) {
 	.header__inner {
 		max-width: 1190px;
 	}

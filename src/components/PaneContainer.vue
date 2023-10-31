@@ -30,7 +30,7 @@ const isWidescreen = useMediaQuery('screen and (min-width: 1236px)');
 	max-width: 890px;
 }
 
-@media screen and (min-width: 1236px) {
+@media (min-width: 1236px) {
 	.pane {
 		grid-template-columns: minmax(0, 290px) minmax(0, 4fr) minmax(0, 290px);
 		max-width: 1190px;
