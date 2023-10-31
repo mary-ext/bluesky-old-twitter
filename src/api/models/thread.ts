@@ -20,7 +20,7 @@ const TypeSortOrder = {
 	[TypePost]: 2,
 };
 
-const calculatePostScore = (uid: DID, post: Post, parent: Post) => {
+const calculatePostScore = (_uid: DID, post: Post, parent: Post) => {
 	const isSameAuthor = parent.author.did === post.author.did;
 	const isFollowing = !!post.author.viewer?.following;
 

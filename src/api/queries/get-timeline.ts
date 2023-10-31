@@ -4,7 +4,6 @@ import type { QueryFunctionContext as QC } from '@tanstack/vue-query';
 
 import { multiagent } from '~/globals/agent.ts';
 import { assert } from '~/utils/misc.ts';
-import { peek } from '~/utils/refs.ts';
 
 import {
 	type PostFilter,
@@ -13,6 +12,7 @@ import {
 	createTimelineSlices,
 	createUnjoinedSlices,
 } from '../models/timeline.ts';
+
 import { fetchPost } from './get-post.ts';
 
 export interface HomeTimelineParams {
@@ -20,8 +20,13 @@ export interface HomeTimelineParams {
 	algorithm: 'reverse-chronological' | (string & {});
 }
 
-export interface CustomTimelineParams {
-	type: 'custom';
+export interface FeedTimelineParams {
+	type: 'feed';
+	uri: string;
+}
+
+export interface ListTimelineParams {
+	type: 'list';
 	uri: string;
 }
 
@@ -36,29 +41,33 @@ export interface SearchTimelineParams {
 	query: string;
 }
 
-export type FeedParams =
+export type TimelineParams =
+	| FeedTimelineParams
 	| HomeTimelineParams
-	| CustomTimelineParams
+	| ListTimelineParams
 	| ProfileTimelineParams
 	| SearchTimelineParams;
 
-export interface FeedPage {
-	cursor?: string;
-	cid?: string;
-	slices: TimelineSlice[];
-	remainingSlices: TimelineSlice[];
+export interface FeedPageCursor {
+	key: string | null;
+	remaining: TimelineSlice[];
 }
 
-export interface FeedPageParam {
-	cursor: string;
-	remainingSlices: TimelineSlice[];
+export interface FeedPage {
+	cursor?: FeedPageCursor;
+	cid?: string;
+	slices: TimelineSlice[];
+}
+
+export interface FeedLatestResult {
+	cid: string | undefined;
 }
 
 type TimelineResponse = ResponseOf<'app.bsky.feed.getTimeline'>;
 
 type Post = RefOf<'app.bsky.feed.defs#postView'>;
 
-type PostRecord = Records['app.bsky.feed.post'];
+// type PostRecord = Records['app.bsky.feed.post'];
 type LikeRecord = Records['app.bsky.feed.like'];
 
 //// Feed query
@@ -89,71 +98,62 @@ const countPosts = (slices: TimelineSlice[], limit?: number) => {
 	return count;
 };
 
-// Error thrown when post search is being used outside of bsky.social, since we
-// are currently unable to determine the BGS affiliation of other instances.
-// ref: https://github.com/bluesky-social/atproto/issues/1307
-export class IncompatibleSearchError extends Error {
-	constructor(message?: string, options?: ErrorOptions) {
-		super(message, options);
-		this.name = 'IncompatibleSearchError';
-	}
-}
-
-export const getTimelineKey = (uid: DID, params: FeedParams, limit = MAX_POSTS) => {
+export const getTimelineKey = (uid: DID, params: TimelineParams, limit = MAX_POSTS) => {
 	return ['getFeed', uid, params, limit] as const;
 };
-export const getTimeline = async (ctx: QC<ReturnType<typeof getTimelineKey>, FeedPageParam>) => {
+export const getTimeline = async (ctx: QC<ReturnType<typeof getTimelineKey>, FeedPageCursor>) => {
 	const [, uid, params, limit] = ctx.queryKey;
+	const pageParam = ctx.pageParam;
+	const signal = ctx.signal;
+
 	const type = params.type;
 
 	const agent = await multiagent.connect(uid);
-	const pageParam = ctx.pageParam;
 
 	let empty = 0;
-	let cursor: string | undefined;
 	let cid: string | undefined;
 
-	let slices: TimelineSlice[];
+	let cursor: string | null | undefined;
+	let items: TimelineSlice[] = [];
 	let count = 0;
 
 	let sliceFilter: SliceFilter | undefined | null;
 	let postFilter: PostFilter | undefined;
 
 	if (pageParam) {
-		cursor = pageParam.cursor;
-		slices = pageParam.remainingSlices;
-		count = countPosts(slices);
-	} else {
-		slices = [];
+		cursor = pageParam.key;
+		items = pageParam.remaining;
+		count = countPosts(items);
 	}
 
 	if (type === 'home') {
-		sliceFilter = createHomeSliceFilter(uid);
+		// sliceFilter = createHomeSliceFilter(uid);
 		// postFilter = combine([
-		// 	createLabelPostFilter(uid),
-		// 	createTempMutePostFilter(uid),
 		// 	createHiddenRepostFilter(uid),
-		// ]);
-	} else if (type === 'custom') {
-		// postFilter = combine([
+		// 	createDuplicatePostFilter(items),
 		// 	createLabelPostFilter(uid),
 		// 	createTempMutePostFilter(uid),
+		// ]);
+	} else if (type === 'feed' || type === 'list') {
+		// sliceFilter = createFeedSliceFilter();
+		// postFilter = combine([
+		// 	createDuplicatePostFilter(items),
 		// 	createLanguagePostFilter(uid),
+		// 	createLabelPostFilter(uid),
+		// 	createTempMutePostFilter(uid),
 		// ]);
 	} else if (type === 'profile') {
 		// postFilter = createLabelPostFilter(uid);
 
-		if (params.tab !== 'likes' && params.tab !== 'media') {
-			sliceFilter = createProfileSliceFilter(params.actor, params.tab === 'replies');
-		} else {
+		if (params.tab === 'likes' || params.tab === 'media') {
 			sliceFilter = null;
 		}
 	} else {
 		// postFilter = createLabelPostFilter(uid);
 	}
 
-	while (count < limit) {
-		const timeline = await fetchPage(agent, params, limit, cursor);
+	while (cursor !== null && count < limit) {
+		const timeline = await fetchPage(agent, params, limit, cursor, signal);
 
 		const feed = timeline.feed;
 		const result =
@@ -161,34 +161,36 @@ export const getTimeline = async (ctx: QC<ReturnType<typeof getTimelineKey>, Fee
 				? createTimelineSlices(uid, feed, sliceFilter, postFilter)
 				: createUnjoinedSlices(uid, feed, postFilter);
 
-		cursor = timeline.cursor;
+		cursor = timeline.cursor || null;
 		empty = result.length > 0 ? 0 : empty + 1;
-		slices = slices.concat(result);
+		items = items.concat(result);
 
 		count += countPosts(result);
 
 		cid ||= feed.length > 0 ? feed[0].post.cid : undefined;
 
-		if (!cursor || empty >= MAX_EMPTY) {
+		if (empty >= MAX_EMPTY) {
 			break;
 		}
 	}
 
 	// we're still slicing by the amount of slices and not amount of posts
-	const remainingSlices = slices.splice(countPosts(slices, limit) + 1, slices.length);
+	const spliced = countPosts(items, limit) + 1;
+
+	const slices = items.slice(0, spliced);
+	const remaining = items.slice(spliced);
 
 	const page: FeedPage = {
-		cursor,
-		cid,
-		slices,
-		remainingSlices,
+		cursor: cursor || remaining.length > 0 ? { key: cursor || null, remaining: remaining } : undefined,
+		cid: cid,
+		slices: slices,
 	};
 
 	return page;
 };
 
 /// Latest feed query
-export const getTimelineLatestKey = (uid: DID, params: FeedParams) => {
+export const getTimelineLatestKey = (uid: DID, params: TimelineParams) => {
 	return ['getFeedLatest', uid, params] as const;
 };
 export const getTimelineLatest = async (ctx: QC<ReturnType<typeof getTimelineLatestKey>>) => {
@@ -196,7 +198,7 @@ export const getTimelineLatest = async (ctx: QC<ReturnType<typeof getTimelineLat
 
 	const agent = await multiagent.connect(uid);
 
-	const timeline = await fetchPage(agent, params, 1, undefined);
+	const timeline = await fetchPage(agent, params, 1, undefined, ctx.signal);
 	const feed = timeline.feed;
 
 	return { cid: feed.length > 0 ? feed[0].post.cid : undefined };
@@ -221,7 +223,7 @@ interface PostSearchView {
 
 const fetchPage = async (
 	agent: Agent,
-	params: FeedParams,
+	params: TimelineParams,
 	limit: number,
 	cursor: string | undefined,
 	signal?: AbortSignal,
@@ -239,11 +241,22 @@ const fetchPage = async (
 		});
 
 		return response.data;
-	} else if (type === 'custom') {
+	} else if (type === 'feed') {
 		const response = await agent.rpc.get('app.bsky.feed.getFeed', {
 			signal: signal,
 			params: {
 				feed: params.uri,
+				cursor: cursor,
+				limit: limit,
+			},
+		});
+
+		return response.data;
+	} else if (type === 'list') {
+		const response = await agent.rpc.get('app.bsky.feed.getListFeed', {
+			signal: signal,
+			params: {
+				list: params.uri,
 				cursor: cursor,
 				limit: limit,
 			},
@@ -284,23 +297,24 @@ const fetchPage = async (
 					actor: params.actor,
 					cursor: cursor,
 					limit: limit,
-					filter: params.tab === 'media' ? 'posts_with_media' : 'posts_with_replies',
+					filter:
+						params.tab === 'media'
+							? 'posts_with_media'
+							: params.tab === 'replies'
+							? 'posts_with_replies'
+							: 'posts_no_replies',
 				},
 			});
 
 			return response.data;
 		}
 	} else if (type === 'search') {
-		if (agent.rpc.serviceUri !== 'https://bsky.social') {
-			throw new IncompatibleSearchError();
-		}
-
 		const offset = cursor ? +cursor : 0;
 		const searchUri =
 			`https://search.bsky.social/search/posts` +
 			`?count=${limit}` +
 			`&offset=${offset}` +
-			`&q=${encodeURI(params.query)}`;
+			`&q=${encodeURIComponent(params.query)}`;
 
 		const searchResponse = await fetch(searchUri, { signal: signal });
 
@@ -310,206 +324,20 @@ const fetchPage = async (
 
 		const searchResults = (await searchResponse.json()) as SearchResult;
 
-		const postUris = searchResults.map((view) => `at://${view.user.did}/${view.tid}`);
-
 		const uid = agent.session!.did;
-		const queries = await Promise.allSettled(postUris.map((uri) => fetchPost([uid, uri])));
+		const queries = await Promise.allSettled(
+			searchResults.map((view) => fetchPost([uid, `at://${view.user.did}/${view.tid}`])),
+		);
 
 		const posts = queries
 			.filter((result): result is PromiseFulfilledResult<Post> => result.status === 'fulfilled')
 			.map((result) => ({ post: result.value }));
 
 		return {
-			cursor: '' + (offset + postUris.length),
+			cursor: '' + (offset + searchResults.length),
 			feed: posts,
 		};
 	} else {
 		assert(false, `Unknown type: ${type}`);
 	}
-};
-
-//// Feed filters
-// type FilterFn<T> = (data: T) => boolean;
-
-// const combine = <T>(filters: Array<undefined | FilterFn<T>>): FilterFn<T> | undefined => {
-// 	const filtered = filters.filter((filter): filter is FilterFn<T> => filter !== undefined);
-// 	const len = filtered.length;
-
-// 	if (len < 1) {
-// 		return;
-// 	}
-
-// 	return (data: T) => {
-// 		for (let idx = 0; idx < len; idx++) {
-// 			const filter = filtered[idx];
-
-// 			if (!filter(data)) {
-// 				return false;
-// 			}
-// 		}
-
-// 		return true;
-// 	};
-// };
-
-// const createLanguagePostFilter = (uid: DID): PostFilter | undefined => {
-// 	const $prefs = preferences[uid] || {};
-
-// 	const allowUnspecified = $prefs.cl_unspecified ?? true;
-// 	let languages = $prefs.cl_codes;
-
-// 	if ($prefs.cl_systemLanguage ?? true) {
-// 		languages = languages ? systemLanguages.concat(languages) : systemLanguages;
-// 	}
-
-// 	if (!languages || languages.length < 1) {
-// 		return undefined;
-// 	}
-
-// 	return (item) => {
-// 		const record = item.post.record as PostRecord;
-// 		const langs = record.langs;
-
-// 		if (!record.text) {
-// 			return true;
-// 		}
-
-// 		if (!langs || langs.length < 1) {
-// 			return allowUnspecified;
-// 		}
-
-// 		return langs.some((code) => languages!.includes(code));
-// 	};
-// };
-
-// const createHiddenRepostFilter = (uid: DID): PostFilter | undefined => {
-// 	const $prefs = preferences[uid];
-
-// 	const hidden = $prefs?.pf_hideReposts;
-
-// 	if (!hidden) {
-// 		return;
-// 	}
-
-// 	return (item) => {
-// 		const reason = item.reason;
-
-// 		return !reason || reason.$type !== 'app.bsky.feed.defs#reasonRepost' || !hidden.includes(reason.by.did);
-// 	};
-// };
-
-// const createTempMutePostFilter = (uid: DID): PostFilter | undefined => {
-// 	const $prefs = preferences[uid];
-// 	const now = Date.now();
-
-// 	let mutes = $prefs?.pf_tempMutes;
-
-// 	// check if there are any outdated mutes before proceeding
-// 	if (mutes) {
-// 		let size = 0;
-// 		let outdated = false;
-
-// 		for (const did in mutes) {
-// 			const date = mutes[did as DID];
-
-// 			if (date === undefined || now >= date) {
-// 				// this is the first time encountering an outdated mute, we'll clone the
-// 				// object so we can delete it.
-// 				if (!outdated) {
-// 					mutes = { ...mutes };
-// 					outdated = true;
-// 				}
-
-// 				delete mutes[did as DID];
-// 				continue;
-// 			}
-
-// 			size++;
-// 		}
-
-// 		// set mutes to undefined if we no longer have any
-// 		if (size < 1) {
-// 			mutes = undefined;
-// 		}
-
-// 		if (outdated) {
-// 			$prefs!.pf_tempMutes = mutes;
-// 		}
-// 	}
-
-// 	if (!mutes) {
-// 		return undefined;
-// 	}
-
-// 	return (item) => {
-// 		const reason = item.reason;
-
-// 		if (reason) {
-// 			const byDid = reason.by.did;
-
-// 			if (mutes![byDid] && now < mutes![byDid]!) {
-// 				return false;
-// 			}
-// 		}
-
-// 		const did = item.post.author.did;
-
-// 		if (mutes![did] && now < mutes![did]!) {
-// 			return false;
-// 		}
-
-// 		return true;
-// 	};
-// };
-
-const createHomeSliceFilter = (uid: DID): SliceFilter | undefined => {
-	return (slice) => {
-		const items = slice.items;
-		const first = items[0];
-
-		// skip any posts that are in reply to non-followed
-		if (first.reply && (!first.reason || first.reason.$type !== 'app.bsky.feed.defs#reasonRepost')) {
-			const root = first.reply.root;
-			const parent = first.reply.parent;
-
-			const rAuthor = root.author;
-			const pAuthor = parent.author;
-
-			const rViewer = rAuthor.viewer;
-			const pViewer = pAuthor.viewer;
-
-			if (
-				(rAuthor.did !== uid && (!peek(rViewer.following) || peek(rViewer.muted))) ||
-				(pAuthor.did !== uid && (!peek(pViewer.following) || peek(pViewer.muted)))
-			) {
-				return false;
-			}
-		} else if (peek(first.post.record).reply) {
-			return false;
-		}
-
-		return true;
-	};
-};
-
-const createProfileSliceFilter = (did: DID, replies: boolean): SliceFilter | undefined => {
-	return (slice) => {
-		const items = slice.items;
-		const first = items[0];
-
-		if (!replies && (!first.reason || first.reason.$type !== 'app.bsky.feed.defs#reasonRepost')) {
-			const reply = first.reply;
-
-			if (reply) {
-				const root = reply.root;
-				const parent = reply.parent;
-
-				return root.author.did === did && parent.author.did === did;
-			} else if (peek(first.post.record).reply) {
-				return false;
-			}
-		}
-
-		return true;
-	};
 };

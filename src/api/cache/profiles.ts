@@ -33,7 +33,7 @@ export interface SignalizedProfile {
 export const profiles: Record<string, WeakRef<SignalizedProfile>> = {};
 
 const createSignalizedProfile = (
-	uid: DID,
+	_uid: DID,
 	profile: Profile | ProfileBasic | ProfileDetailed,
 	key?: number,
 ) => {

@@ -2,26 +2,88 @@ import type { DID, RefOf } from '@externdefs/bluesky-client/atp-schema';
 
 import { peek } from '~/utils/refs.ts';
 
-import { type SignalizedTimelinePost, createSignalizedTimelinePost } from '../cache/posts.ts';
+import { type SignalizedPost, mergeSignalizedPost } from '../cache/posts.ts';
 
-type FeedPost = RefOf<'app.bsky.feed.defs#feedViewPost'>;
+type Post = RefOf<'app.bsky.feed.defs#postView'>;
+type TimelineItem = RefOf<'app.bsky.feed.defs#feedViewPost'>;
+type ReplyRef = RefOf<'app.bsky.feed.defs#replyRef'>;
 
-export interface TimelineSlice {
-	items: SignalizedTimelinePost[];
+// EnsuredTimelineItem
+export interface EnsuredReplyRef {
+	root: Post;
+	parent: Post;
 }
 
-const isNextInThread = (slice: TimelineSlice, item: FeedPost) => {
+export const ensureReplyRef = (reply: ReplyRef | undefined): EnsuredReplyRef | undefined => {
+	if (reply) {
+		const root = reply.root;
+		const parent = reply.parent;
+
+		if (root.$type === 'app.bsky.feed.defs#postView' && parent.$type === 'app.bsky.feed.defs#postView') {
+			return { root, parent };
+		}
+	}
+};
+
+export interface EnsuredTimelineItem {
+	post: Post;
+	reply?: EnsuredReplyRef;
+	reason: TimelineItem['reason'];
+}
+
+export const ensureTimelineItem = (item: TimelineItem): EnsuredTimelineItem => {
+	return {
+		post: item.post,
+		reply: ensureReplyRef(item.reply),
+		reason: item.reason,
+	};
+};
+
+// SignalizedTimelineItem
+export interface SignalizedTimelineItem {
+	post: SignalizedPost;
+	reply?: {
+		root: SignalizedPost;
+		parent: SignalizedPost;
+	};
+	reason: TimelineItem['reason'];
+}
+
+export const mergeSignalizedTimelineItem = (
+	uid: DID,
+	item: EnsuredTimelineItem,
+	key?: number,
+): SignalizedTimelineItem => {
+	const reply = item.reply;
+
+	return {
+		post: mergeSignalizedPost(uid, item.post, key),
+		reply: reply && {
+			root: mergeSignalizedPost(uid, reply.root, key),
+			parent: mergeSignalizedPost(uid, reply.parent, key),
+		},
+		reason: item.reason,
+	};
+};
+
+// TimelineSlice
+export interface TimelineSlice {
+	items: SignalizedTimelineItem[];
+}
+
+export type SliceFilter = (slice: TimelineSlice) => boolean | TimelineSlice[];
+export type PostFilter = (item: EnsuredTimelineItem) => boolean;
+
+const isNextInThread = (slice: TimelineSlice, item: EnsuredTimelineItem) => {
 	const items = slice.items;
 	const last = items[items.length - 1];
 
 	const reply = item.reply;
 
-	return (
-		!!reply && reply.parent.$type === 'app.bsky.feed.defs#postView' && peek(last.post.cid) == reply.parent.cid
-	);
+	return !!reply && peek(last.post.cid) == reply.parent.cid;
 };
 
-const isFirstInThread = (slice: TimelineSlice, item: FeedPost) => {
+const isFirstInThread = (slice: TimelineSlice, item: EnsuredTimelineItem) => {
 	const items = slice.items;
 	const first = items[0];
 
@@ -30,46 +92,29 @@ const isFirstInThread = (slice: TimelineSlice, item: FeedPost) => {
 	return !!reply && peek(reply.parent.cid) === item.post.cid;
 };
 
-export interface TimelinePage {
-	cursor?: string;
-	cid?: string;
-	length: number;
-	slices: TimelineSlice[];
-}
-
-export type SliceFilter = (slice: TimelineSlice, seen: Set<string>) => boolean;
-export type PostFilter = (post: FeedPost) => boolean;
+const isArray = Array.isArray;
 
 export const createTimelineSlices = (
 	uid: DID,
-	arr: FeedPost[],
-	sliceFilter?: SliceFilter,
-	postFilter?: PostFilter,
-) => {
+	arr: TimelineItem[],
+	filterSlice?: SliceFilter,
+	filterPost?: PostFilter,
+): TimelineSlice[] => {
 	const key = Date.now();
 
-	const seen = new Set<string>();
 	let slices: TimelineSlice[] = [];
 	let jlen = 0;
 
 	// arrange the posts into connected slices
 	loop: for (let i = arr.length - 1; i >= 0; i--) {
-		const item = arr[i];
-		const cid = item.post.cid;
+		const item = ensureTimelineItem(arr[i]);
 
-		// skip any posts that have been seen already
-		if (seen.has(cid)) {
+		if (filterPost && !filterPost(item)) {
 			continue;
 		}
 
-		seen.add(cid);
-
-		if (postFilter && !postFilter(item)) {
-			continue;
-		}
-
-		// find a slice that matches
-		const signalized = createSignalizedTimelinePost(uid, item, key);
+		// find a slice that matches,
+		const signalized = mergeSignalizedTimelineItem(uid, item, key);
 
 		// if we find a matching slice and it's currently not in front, then bump
 		// it to the front. this is so that new reply don't get buried away because
@@ -102,25 +147,46 @@ export const createTimelineSlices = (
 		jlen++;
 	}
 
-	if (sliceFilter && jlen > 0) {
-		slices = slices.filter((slice) => sliceFilter(slice, seen));
+	if (filterSlice && jlen > 0) {
+		const unfiltered = slices;
+		slices = [];
+
+		for (let j = 0; j < jlen; j++) {
+			const slice = unfiltered[j];
+			const result = filterSlice(slice);
+
+			if (result) {
+				if (isArray(result)) {
+					for (let k = 0, klen = result.length; k < klen; k++) {
+						const slice = result[k];
+						slices.push(slice);
+					}
+				} else {
+					slices.push(slice);
+				}
+			}
+		}
 	}
 
 	return slices;
 };
 
-export const createUnjoinedSlices = (uid: DID, arr: FeedPost[], postFilter?: PostFilter): TimelineSlice[] => {
-	const slices: TimelineSlice[] = [];
+export const createUnjoinedSlices = (
+	uid: DID,
+	arr: TimelineItem[],
+	filterPost?: PostFilter,
+): TimelineSlice[] => {
 	const key = Date.now();
+	const slices: TimelineSlice[] = [];
 
 	for (let idx = 0, len = arr.length; idx < len; idx++) {
-		const item = arr[idx];
+		const item = ensureTimelineItem(arr[idx]);
 
-		if (postFilter && !postFilter(item)) {
+		if (filterPost && !filterPost(item)) {
 			continue;
 		}
 
-		const signalized = createSignalizedTimelinePost(uid, item, key);
+		const signalized = mergeSignalizedTimelineItem(uid, item, key);
 
 		slices.push({ items: [signalized] });
 	}

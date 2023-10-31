@@ -1,5 +1,4 @@
-import { shallowRef } from 'vue';
-import { type HistoryState, createRouter, createWebHistory, loadRouteLocation } from 'vue-router';
+import { createRouter, createWebHistory, loadRouteLocation } from 'vue-router';
 
 import type { DID } from '@externdefs/bluesky-client/atp-schema';
 

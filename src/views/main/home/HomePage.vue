@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router';
 import type { DID } from '@externdefs/bluesky-client/atp-schema';
 import { useInfiniteQuery } from '@tanstack/vue-query';
 
-import { type FeedPageParam, getTimelineKey, getTimeline } from '~/api/queries/get-timeline.ts';
+import { getTimelineKey, getTimeline } from '~/api/queries/get-timeline.ts';
 
 import Post, { createPostKey } from '~/components/Post.vue';
 import PaneContainer from '~/components/PaneContainer.vue';
@@ -18,7 +18,7 @@ const uid = toRef(() => route.params.uid as DID);
 const { data } = useInfiniteQuery({
 	queryKey: computed(() => getTimelineKey(uid.value, { type: 'home', algorithm: 'reverse-chronological' })),
 	queryFn: getTimeline,
-	getNextPageParam: (l) => ({ cursor: l.cursor, remainingSlices: l.remainingSlices }) as FeedPageParam,
+	getNextPageParam: (l) => l.cursor,
 	refetchOnMount: true,
 	refetchOnReconnect: false,
 	refetchOnWindowFocus: false,
