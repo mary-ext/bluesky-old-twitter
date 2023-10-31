@@ -1,5 +1,5 @@
-import { Agent, type AtpLoginOptions, type AtpSessionData } from '@intrnl/bluesky-client/agent';
-import type { DID } from '@intrnl/bluesky-client/atp-schema';
+import { Agent, type AtpLoginOptions, type AtpSessionData } from '@externdefs/bluesky-client/agent';
+import type { DID } from '@externdefs/bluesky-client/atp-schema';
 import { createReactiveLocalStorage } from '~/utils/storage';
 
 export enum MultiagentState {

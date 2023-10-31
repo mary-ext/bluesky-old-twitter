@@ -10,7 +10,7 @@ const formatStat = (value: number) => {
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import type { DID } from '@intrnl/bluesky-client/atp-schema';
+import type { DID } from '@externdefs/bluesky-client/atp-schema';
 import { useQuery } from '@tanstack/vue-query';
 
 import { getProfile, getProfileKey } from '~/api/queries/get-profile.ts';

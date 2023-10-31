@@ -7,7 +7,7 @@ const MAX_DESCENDANTS = 4;
 import { computed, toRef } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import type { DID } from '@intrnl/bluesky-client/atp-schema';
+import type { DID } from '@externdefs/bluesky-client/atp-schema';
 import { useQuery } from '@tanstack/vue-query';
 
 import { getPostThread, getPostThreadKey } from '~/api/queries/get-post-thread.ts';

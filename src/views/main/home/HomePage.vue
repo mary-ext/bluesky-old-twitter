@@ -2,7 +2,7 @@
 import { computed, toRef } from 'vue';
 import { useRoute } from 'vue-router';
 
-import type { DID } from '@intrnl/bluesky-client/atp-schema';
+import type { DID } from '@externdefs/bluesky-client/atp-schema';
 import { useInfiniteQuery } from '@tanstack/vue-query';
 
 import { type FeedPageParam, getTimelineKey, getTimeline } from '~/api/queries/get-timeline.ts';

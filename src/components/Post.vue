@@ -8,7 +8,7 @@ export const createPostKey = (cid: string, parent: boolean, next: boolean) => {
 import { toRef } from 'vue';
 import { useRouter } from 'vue-router';
 
-import type { DID } from '@intrnl/bluesky-client/atp-schema';
+import type { DID } from '@externdefs/bluesky-client/atp-schema';
 
 import type { SignalizedPost, SignalizedTimelinePost } from '~/api/cache/posts.ts';
 import { getRecordId } from '~/api/utils.ts';

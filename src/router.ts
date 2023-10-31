@@ -1,7 +1,7 @@
 import { shallowRef } from 'vue';
 import { type HistoryState, createRouter, createWebHistory, loadRouteLocation } from 'vue-router';
 
-import type { DID } from '@intrnl/bluesky-client/atp-schema';
+import type { DID } from '@externdefs/bluesky-client/atp-schema';
 
 import { isDid } from '~/api/utils.ts';
 import { multiagent } from '~/globals/agent.ts';

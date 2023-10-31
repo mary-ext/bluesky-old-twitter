@@ -1,6 +1,6 @@
 import { type Ref, markRaw, shallowRef as ref } from 'vue';
 
-import type { DID, Records, RefOf } from '@intrnl/bluesky-client/atp-schema';
+import type { DID, Records, RefOf } from '@externdefs/bluesky-client/atp-schema';
 
 import { type SignalizedProfile, mergeSignalizedProfile } from './profiles.ts';
 import { assignDequalRef } from '~/utils/refs.ts';

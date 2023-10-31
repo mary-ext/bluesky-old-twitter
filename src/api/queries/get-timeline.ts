@@ -1,5 +1,5 @@
-import type { Agent } from '@intrnl/bluesky-client/agent';
-import type { DID, Records, RefOf, ResponseOf } from '@intrnl/bluesky-client/atp-schema';
+import type { Agent } from '@externdefs/bluesky-client/agent';
+import type { DID, Records, RefOf, ResponseOf } from '@externdefs/bluesky-client/atp-schema';
 import type { QueryFunctionContext as QC } from '@tanstack/vue-query';
 
 import { multiagent } from '~/globals/agent.ts';

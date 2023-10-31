@@ -2,7 +2,7 @@
 import { computed, toRef } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 
-import type { DID } from '@intrnl/bluesky-client/atp-schema';
+import type { DID } from '@externdefs/bluesky-client/atp-schema';
 import { useQuery } from '@tanstack/vue-query';
 
 import { getProfileKey, getProfile } from '~/api/queries/get-profile';
