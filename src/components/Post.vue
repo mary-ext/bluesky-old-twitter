@@ -31,16 +31,15 @@ const props = defineProps<{
 	next?: boolean;
 }>();
 
-const post = toRef(props, 'post');
-const author = toRef(() => post.value.author);
-const record = toRef(() => post.value.record.value);
+const author = toRef(() => props.post.author);
+const record = toRef(() => props.post.record.value);
 
 const handleClick = (ev: MouseEvent | KeyboardEvent) => {
 	if (!isElementClicked(ev)) {
 		return;
 	}
 
-	let path = `/u/${props.uid}/profile/${author.value.did}/post/${getRecordId(post.value.uri)}`;
+	let path = `/u/${props.uid}/profile/${author.value.did}/post/${getRecordId(props.post.uri)}`;
 
 	if (isElementAltClicked(ev)) {
 		open(path, '_blank');
@@ -56,7 +55,7 @@ const handleClick = (ev: MouseEvent | KeyboardEvent) => {
 		@auxclick="handleClick"
 		@keydown="handleClick"
 		class="post"
-		:class="{ 'post--end': !props.next }"
+		:class="{ 'post--end': !next }"
 	>
 		<div class="post__context">
 			<!-- Repost context -->
@@ -76,7 +75,15 @@ const handleClick = (ev: MouseEvent | KeyboardEvent) => {
 
 		<div class="post-inner">
 			<div class="post-inner__side">
+				<template v-if="prev && parent">
+					<div class="post-connector post-connector--prev"></div>
+				</template>
+
 				<img :src="author.avatar.value || DefaultAvatar" class="post-inner__avatar" />
+
+				<template v-if="next">
+					<div class="post-connector post-connector--next"></div>
+				</template>
 			</div>
 			<div class="post-inner__content">
 				<div class="post-content__header">
@@ -98,7 +105,7 @@ const handleClick = (ev: MouseEvent | KeyboardEvent) => {
 					</div>
 				</div>
 
-				<template v-if="!props.prev && parent">
+				<template v-if="!prev && parent">
 					<div class="post-content__reply-to">
 						Replying to <a class="post-reply-to__handle">@{{ parent.author.handle.value }}</a>
 					</div>
@@ -139,6 +146,7 @@ const handleClick = (ev: MouseEvent | KeyboardEvent) => {
 
 <style scoped>
 .post {
+	position: relative;
 	cursor: pointer;
 	padding: 9px 12px;
 }
@@ -188,6 +196,18 @@ const handleClick = (ev: MouseEvent | KeyboardEvent) => {
 	flex: 0 0 auto;
 	flex-direction: column;
 	align-items: center;
+}
+
+.post-connector {
+	border-left: 3px solid #a7c7de;
+	border-radius: 2px;
+}
+.post-connector--prev {
+	/* TODO: figure this out */
+}
+.post-connector--next {
+	flex: 1 1 auto;
+	margin: 4px 0 -9px 0;
 }
 
 .post-inner__avatar {
