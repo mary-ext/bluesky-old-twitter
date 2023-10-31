@@ -203,7 +203,8 @@ const handleClick = (ev: MouseEvent | KeyboardEvent) => {
 	border-radius: 2px;
 }
 .post-connector--prev {
-	/* TODO: figure this out */
+	margin: calc(-16.5px - 9px - 4px) 0 4px 0;
+	height: calc(16.5px + 9px);
 }
 .post-connector--next {
 	flex: 1 1 auto;
