@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useMediaQuery } from '~/utils/media-query';
 
-const isWidescreen = useMediaQuery('screen and (min-width: 1236px)');
+const isWidescreen = useMediaQuery('(min-width: 1236px)');
 </script>
 
 <template>
