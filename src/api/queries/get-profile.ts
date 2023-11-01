@@ -1,8 +1,12 @@
+import type { Ref } from 'vue';
+
 import type { DID } from '@externdefs/bluesky-client/atp-schema';
 import type { QueryFunctionContext as QC } from '@tanstack/vue-query';
 
 import { multiagent } from '~/globals/agent.ts';
-import { mergeSignalizedProfile } from '../cache/profiles';
+
+import { mergeSignalizedProfile, profiles, type SignalizedProfile } from '../cache/profiles.ts';
+import { isDid } from '../utils.ts';
 
 export const getProfileKey = (uid: DID, actor: string) => {
 	return ['getProfile', uid, actor] as const;
@@ -37,4 +41,20 @@ export const getProfile = async (ctx: QC<ReturnType<typeof getProfileKey>>) => {
 	}
 
 	return profile;
+};
+
+export const createInitialProfileData = (uid: Ref<DID>, actor: Ref<string>) => {
+	return (): SignalizedProfile | undefined => {
+		const $uid = uid.value;
+		const $actor = actor.value;
+
+		if ($actor && isDid($actor)) {
+			const id = $uid + '|' + $actor;
+
+			const ref = profiles[id];
+			const profile = ref?.deref();
+
+			return profile;
+		}
+	};
 };
