@@ -54,6 +54,9 @@ const { data: profile } = useQuery({
 
 <style scoped>
 .header {
+	position: sticky;
+	top: 0;
+	z-index: 100;
 	border-bottom: 1px solid rgba(0, 0, 0, 0.15);
 	background-color: #fff;
 	height: 46px;
