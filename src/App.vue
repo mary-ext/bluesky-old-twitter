@@ -26,9 +26,9 @@ const resolvedRoute = computed((): [bg: LoadedRouteLocation, fg: LoadedRouteLoca
 </script>
 
 <template>
-	<RouterView :route="resolvedRoute[0]" />
+	<RouterView :route="resolvedRoute[0]" :key="resolvedRoute[0].fullPath" />
 
 	<template v-if="resolvedRoute[1]">
-		<RouterView :route="resolvedRoute[1]" />
+		<RouterView :route="resolvedRoute[1]" :key="resolvedRoute[1].fullPath" />
 	</template>
 </template>
