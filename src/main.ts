@@ -9,6 +9,16 @@ import App from './App.vue';
 import { router } from './router.ts';
 
 const app = createApp(App);
+
 app.use(router);
-app.use(VueQueryPlugin);
+app.use(VueQueryPlugin, {
+	queryClientConfig: {
+		defaultOptions: {
+			queries: {
+				refetchOnWindowFocus: false,
+			},
+		},
+	},
+});
+
 app.mount('#app');
